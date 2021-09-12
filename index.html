@@ -121,9 +121,11 @@
 		
 	async function setup() {
 		
+	 var cnv = createCanvas(windowWidth, 400);
+    	 cnv.position(350, 190);
 	 //cnv = createCanvas(windowWidth, windowHeight);	
-	  cnv = createCanvas(640, 480);
-	  centerCanvas();
+	  //cnv = createCanvas(640, 480);
+	  //centerCanvas();
 	  
 	  video = createCapture(VIDEO);
 	  video.hide();
