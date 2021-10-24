@@ -337,19 +337,19 @@
 		}
 
 
-		function draw() {
-		  push();
-		  translate(capture.width, 0);
-		  scale(-1, 1);
-		  image(capture, 0, 0, capture.width, capture.height);
+		// function draw() {
+		//   push();
+		//   translate(capture.width, 0);
+		//   scale(-1, 1);
+		//   image(capture, 0, 0, capture.width, capture.height);
 		 
-		  if(poses.length > 0){
-			drawKeypoints();
-			drawSkeleton();
-		  }
-		  pop();
-		  drawResult();
-		}
+		//   if(poses.length > 0){
+		// 	drawKeypoints();
+		// 	drawSkeleton();
+		//   }
+		//   pop();
+		//   drawResult();
+		// }
 
 
 		function drawKeypoints()  {
