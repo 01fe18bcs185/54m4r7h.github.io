@@ -168,7 +168,7 @@
 		var options = {
 			video: {
 				
-				facingMode: "environment"
+				facingMode: "user"
 
 			}
 		};
@@ -182,10 +182,6 @@
 			
 		  capture = createCapture(options);
 		  capture.hide();
-		  
-		  switchBtn = createButton('Switch Camera');
-		  switchBtn.position(19, 19);
-		  switchBtn.mousePressed(switchCamera);
 
 		  // Load posenet model from ml5js framework
 		  poseNet = ml5.poseNet(capture, modelLoaded);
