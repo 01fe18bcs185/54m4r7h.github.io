@@ -2,7 +2,8 @@
 <html lang="en">
 
 <head>
-<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<!-- <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"> -->
+<meta name="viewport" content="user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1,width=device-width">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/addons/p5.dom.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.sound.min.js"></script>
@@ -164,7 +165,7 @@
 			
 		  var cnv = createCanvas(640, 480);
 		  //cnv.position(0, 2);
-		  center = (windowWidth - width) / 2;
+		  center = (displayWidth - width) / 2;
 		  cnv.position(center, 2);
 			
 		  video = createCapture(VIDEO);
