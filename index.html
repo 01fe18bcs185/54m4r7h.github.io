@@ -60,7 +60,6 @@
 
 <!-- <script type="text/javascript"> -->
 	<script>	
-		let video;
 		let poseNet;
 		let pose;
 		let skeleton;
@@ -74,6 +73,9 @@
 		let broke = false;
 		let res = "";
 		var center=0;
+		
+
+		var capture;
 		let switchFlag = false;
 		let switchBtn;
 
@@ -164,53 +166,6 @@
 		}
 		
 
-		function stopCapture() {
-			try{
-			let stream = video.elt.srcObject;
-			let tracks = stream.getTracks();
-
-			tracks.forEach(function(track) {
-				track.stop();
-			});
-
-			video.elt.srcObject = null;
-			}
-			catch{
-
-			}
-		}
-
-		function switchCamera()
-		{
-			switchFlag = !switchFlag;
-			stopCapture();
-			if(switchFlag==true)
-			{
-			video.remove();
-			options = {
-				video: {
-					facingMode: {
-					exact: "environment"
-					}
-				}
-			};
-
-			}
-			else
-			{
-			video.remove();
-			options = {
-				video: {
-					facingMode: {
-					exact: "user"
-					}
-				}
-			};
-			}
-			video = createCapture(options);
-			video.hide();
-		}
-
 		var options = {
 			video: {
 				
@@ -227,15 +182,15 @@
 		  center = (displayWidth-width) / 2;
 		  cnv.position(center+75, 2);
 			
-		  video = createCapture(options);
-		  video.hide();
+		  capture = createCapture(options);
+		  capture.hide();
 
 		  switchBtn = createButton('Switch Camera');
 	      switchBtn.position(19, 19);
 		  switchBtn.mousePressed(switchCamera);
 		  
 		  // Load posenet model from ml5js framework
-		  poseNet = ml5.poseNet(video, modelLoaded);
+		  poseNet = ml5.poseNet(capture, modelLoaded);
 		  poseNet.on('pose', function(results) {
 			poses = results;
 			if (poses.length > 0) {
@@ -344,9 +299,9 @@
 
 		function draw() {
 		  push();
-		  translate(video.width, 0);
+		  translate(capture.width, 0);
 		  scale(-1, 1);
-		  image(video, 0, 0, video.width, video.height);
+		  image(capture, 0, 0, capture.width, capture.height);
 		 
 		  if(poses.length > 0){
 			drawKeypoints();
@@ -382,7 +337,7 @@
 		  noStroke();
 		  textSize(25);
 		  textAlign(CENTER);
-		  text(res, video.width / 2, 50);
+		  text(res, capture.width / 2, 50);
 		//   window.flutter_inappwebview.callHandler('updater', res);
 		}
 
