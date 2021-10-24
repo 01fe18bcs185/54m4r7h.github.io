@@ -2,281 +2,330 @@
 <html lang="en">
 
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/p5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.0/addons/p5.dom.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.sound.min.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0/dist/tf.js"></script>
 <script src="https://unpkg.com/ml5@0.1.1/dist/ml5.min.js" type="text/javascript"></script>
 <script src="https://unpkg.com/mathjs@8.1.0/lib/browser/math.js"></script>
 
-</head>
-
-<body>
-<!-- <script type="text/javascript"> -->
-<script>	
-    let video;
-	let poseNet;
-	let pose;
-	let skeleton;
-	let brain;
-	let inputs = [];
-	let cur = [];
-	let poses = [];
-	let fill_inputs_done = false;
-	let classifyPose_done = false;
-	let paused = false;
-	let broke = false;
-	let res = "";
-	var cnv;
-
-	function getMax(ar){
-		let max = [{value:ar[0],index:0}, 
-		           {value:ar[1],index:1},
-		           {value:ar[2],index:2}];
-		max.sort((a,b)=>a.value-b.value);
-		    
-		for (let i = 3;i<ar.length;i++){
-		    if (ar[i] > max[0].value){
-		       max[0] = {value:ar[i],index:i};
-		       max.sort((a,b)=>a.value-b.value);
-		    }
-		}
-		return max;
-	}
-
-	async function keyPressed() {
-	  if (key == 'p') {
-		paused = !paused;
-	  }
-	  if (key == 'b'){
-		broke = true;
-	  }
-	}
-
-	function delay(time) {
-	  return new Promise((resolve, reject) => {
-		setTimeout(resolve, time);
-	  });
-	}
-
- 	async function preload(){
-	  console.log("Downloading....");
-	  brain = await tf.loadLayersModel('https://54m4r7h.github.io/Models/Static/model.json');
-	  console.log("Downloaded!!");
-	}
-	
-	function normalize(cur){
-	  let = x1 = cur[10];
-	  let = y1 = cur[11];
-	  let = x2 = cur[12];
-	  let = y2 = cur[13];
-
-	  var a = x1 - x2;
-	  var b = y1 - y2;
-
-	  var shoulderDistance = Math.sqrt( a*a + b*b );
-
-	  var noseX = cur[0];
-	  var noseY = cur[1];
-
-	  for(let i = 0; i + 1 < cur.length; i += 2){
-		cur[i] = (cur[i] - noseX) / shoulderDistance;
-		cur[i + 1] = (cur[i + 1] - noseY) / shoulderDistance;
-	  }
-
-	  cur.shift();
-	  cur.shift(); // remove first 2 elements i.e coordinates of nose keypoint
-
-	  return cur;
-	}
-
-	async function fill_inputs(){
-	  for(var i = 0; i < 1; i ++){
-		await new Promise(next =>{
-		    cur = [];
-		    classifyPose();
-
-		    async function finish() {
-		      await delay(20);
-		      if (classifyPose_done) {
-		        // cur = cur.slice(0, 26);
-		        inputs = normalize(cur);
-		        classifyPose_done = false;
-		        next();
-		      } else {
-		        finish(); //wait
-		      }
-		    }
-
-
-		    finish();
-		});
-	  }
-	  fill_inputs_done = true;
-	}
-	
-// 	function centerCanvas() {
-// 	  var x = (windowWidth - 640) / 2;
-// 	  var y = (windowHeight - 480) / 2;
-// 	  cnv.position(x, y);
-// 	}
-	
-// 	function windowResized() {
-// 	  centerCanvas();
-// 	}
-		
-	async function setup() {
-		
-	var cnv = createCanvas(640, 480);
-        cnv.position(0, 0);
-		
-	 //cnv = createCanvas(windowWidth, windowHeight);	
-	  //cnv = createCanvas(640, 480);
-	  //centerCanvas();
-	  
-	  video = createCapture(VIDEO);
-	  video.hide();
-	  
-	  // Load posenet model from ml5js framework
-	  poseNet = ml5.poseNet(video, modelLoaded);
-	  poseNet.on('pose', function(results) {
-		poses = results;
-		if (poses.length > 0) {
-		  pose = poses[0].pose;
-		  skeleton = poses[0].skeleton;
-		}
-	  });
-
-	  while(1){ 
-		await new Promise(next => {
-
-		  inputs = [];
-		  fill_inputs();
-
-		  async function start(){
-		    if(inputs.length == 32){
-
-		      let r = await brain.predict(tf.tensor([inputs]));
-
-		      postures = ["Arms on Hip", "Folding Arms", "Right Up", "Legs Straight", "Legs Apart", "Floor - Legs Crossed", "Both Front",
-		      "Bend Forward", "Both Up", "Sit on Chair", "Right Side", "Left Side", "Left Front", "Both Side", "Right Front", "Left Up"]
-		      
-		      r.data().then(function(label){ 
-		          let max = getMax(label);
-		          let k1 = max[2].value.toFixed(2);
-		          let v1 = max[2].index;
-		          let k2 = max[1].value.toFixed(2);
-		          let v2 = max[1].index;
-		          let k3 = max[0].value.toFixed(2);
-		          let v3 = max[0].index;
-
-		          res = postures[v1] + "-" + k1 + "\n" + postures[v2] + "-" + k2 + "\n" + postures[v3] + "-" + k3 + "\n";
-		      });
-
-		      fill_inputs_done = false;
-		      next();
-		      
-		    }else{ // wait
-		      await delay(25);
-		      start();
-		    }
-		}
-
-		async function check(){
-		  if(paused){
-		    await delay(1000);
-		    console.log("waiting");
-		    check();
-		  }else if(broke){
-		    exit();
-		  }else{
-		    start();
-		  }
-		}
-
-		check();
-		
-		});
-
-	  }
-
-	}
-
-
-	async function classifyPose() {  
-	  if(pose){
-
-		for (let i = 0; i < pose.keypoints.length; i++) {
-		  let x = pose.keypoints[i].position.x;
-		  let y = pose.keypoints[i].position.y;
-		  cur.push(x);
-		  cur.push(y);
-		}
-
-		classifyPose_done = true;
-	  
-	  } else {
-		console.log('no pose detected, waiting');
-		await delay(100);
-		classifyPose();
-	  }
-
-	}
-
-
-	function modelLoaded() {
-	  console.log('poseNet ready');
-	}
-
-
-	function draw() {
-	  push();
-	  translate(video.width, 0);
-	  scale(-1, 1);
-	  image(video, 0, 0, video.width, video.height);
-	 
-	  if(poses.length > 0){
-		drawKeypoints();
-		drawSkeleton();
-	  }
-	  pop();
-	  drawResult();
-	}
-
-
-	function drawKeypoints()  {
-		for (let j = 0; j < pose.keypoints.length; j++) {
-		  let keypoint = pose.keypoints[j];
-		  if (keypoint.score > 0.2) {
-		    fill(255, 0, 0);
-		    noStroke();
-		    ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
-		  }
-		}
-	}
-
-	function drawSkeleton() {
-		for (let j = 0; j < skeleton.length; j++) {
-		  let partA = skeleton[j][0];
-		  let partB = skeleton[j][1];
-		  stroke(255, 0, 0);
-		  line(partA.position.x, partA.position.y, partB.position.x, partB.position.y);
-		}
-	}
-
-	function drawResult(){
-	  fill(255, 0, 255);
-	  noStroke();
-	  textSize(25);
-	  textAlign(RIGHT);
-	  text(res, video.width / 2, 50);
-	  
+<style type="text/css">
+    .btn {
+        background-color: #4CAF50; /* Green */
+		  border: none;
+		  color: white;
+		  padding: 15px 32px;
+		  text-align: center;
+		  text-decoration: none;
+		  display: inline-block;
+		  font-size: 16px;
+		  border-radius: 4px;
+		  transition-duration: 0.4s;
+		  margin-top: 500px;
+    }
+    .btn:hover {
+	  background-color: #4CAF50; /* Green */
+	  color: white;
 	}
     
-// preload();
-//  	setup();
+    .btn-dis {
+	  background-color: white; 
+	  color: black; 
+	  border: 2px solid #4CAF50;
+	}
+	
+    #container{
+		text-align: center;
+	}
+
+	
+</style>
+
+</head>
+
+<body scroll="no" style="overflow: hidden">
+
+<div id="container">
+	<a href="#">  
+	  <input class="btn" type="submit" value="Posture"/>
+	</a>
+
+	<a href="dynamic-gesture.html">  
+	  <input class="btn btn-dis" type="submit" value="Action"/>
+	</a>
+</div>
+
+
+<!-- <script type="text/javascript"> -->
+	<script>	
+		let video;
+		let poseNet;
+		let pose;
+		let skeleton;
+		let brain;
+		let inputs = [];
+		let cur = [];
+		let poses = [];
+		let fill_inputs_done = false;
+		let classifyPose_done = false;
+		let paused = false;
+		let broke = false;
+		let res = "";
+		var center=0;
+
+		function getMax(ar){
+			let max = [{value:ar[0],index:0}, 
+				       {value:ar[1],index:1},
+				       {value:ar[2],index:2}];
+			max.sort((a,b)=>a.value-b.value);
+				
+			for (let i = 3;i<ar.length;i++){
+				if (ar[i] > max[0].value){
+				   max[0] = {value:ar[i],index:i};
+				   max.sort((a,b)=>a.value-b.value);
+				}
+			}
+			return max;
+		}
+
+		async function keyPressed() {
+		  if (key == 'p') {
+			paused = !paused;
+		  }
+		  if (key == 'b'){
+			broke = true;
+		  }
+		}
+
+		function delay(time) {
+		  return new Promise((resolve, reject) => {
+			setTimeout(resolve, time);
+		  });
+		}
+
+	 	async function preload(){
+		  console.log("Downloading....");
+		  brain = await tf.loadLayersModel('https://54m4r7h.github.io/Models/Static/model.json');
+		  console.log("Downloaded!!");
+		}
 		
-</script>
+		function normalize(cur){
+		  let = x1 = cur[10];
+		  let = y1 = cur[11];
+		  let = x2 = cur[12];
+		  let = y2 = cur[13];
+
+		  var a = x1 - x2;
+		  var b = y1 - y2;
+
+		  var shoulderDistance = Math.sqrt( a*a + b*b );
+
+		  var noseX = cur[0];
+		  var noseY = cur[1];
+
+		  for(let i = 0; i + 1 < cur.length; i += 2){
+			cur[i] = (cur[i] - noseX) / shoulderDistance;
+			cur[i + 1] = (cur[i + 1] - noseY) / shoulderDistance;
+		  }
+
+		  cur.shift();
+		  cur.shift(); // remove first 2 elements i.e coordinates of nose keypoint
+
+		  return cur;
+		}
+
+		async function fill_inputs(){
+		  for(var i = 0; i < 1; i ++){
+			await new Promise(next =>{
+				cur = [];
+				classifyPose();
+
+				async function finish() {
+				  await delay(20);
+				  if (classifyPose_done) {
+				    // cur = cur.slice(0, 26);
+				    inputs = normalize(cur);
+				    classifyPose_done = false;
+				    next();
+				  } else {
+				    finish(); //wait
+				  }
+				}
+
+
+				finish();
+			});
+		  }
+		  fill_inputs_done = true;
+		}
+		
+		async function setup() {
+			
+		  var cnv = createCanvas(640, 480);
+		  //cnv.position(0, 2);
+		  center = (windowWidth - width) / 2;
+		  cnv.position(center, 2);
+			
+		  video = createCapture(VIDEO);
+		  video.hide();
+		  
+		  // Load posenet model from ml5js framework
+		  poseNet = ml5.poseNet(video, modelLoaded);
+		  poseNet.on('pose', function(results) {
+			poses = results;
+			if (poses.length > 0) {
+			  pose = poses[0].pose;
+			  skeleton = poses[0].skeleton;
+			}
+		  });
+
+		  while(1){ 
+			await new Promise(next => {
+
+			  inputs = [];
+			  fill_inputs();
+
+			  async function start(){
+				if(inputs.length == 32){
+
+				  let r = await brain.predict(tf.tensor([inputs]));
+
+				  postures = ["Arms on Hip", "Folding Arms", "Right Up", "Legs Straight", "Legs Apart", "Floor - Legs Crossed", "Both Front",
+				  "Bend Forward", "Both Up", "Sit on Chair", "Right Side", "Left Side", "Left Front", "Both Side", "Right Front", "Left Up"]
+				  
+				  r.data().then(function(label){ 
+				      let max = getMax(label);
+				      let k1 = max[2].value.toFixed(2);
+				      let v1 = max[2].index;
+				      let k2 = max[1].value.toFixed(2);
+				      let v2 = max[1].index;
+				      let k3 = max[0].value.toFixed(2);
+				      let v3 = max[0].index;
+
+				      res = postures[v1] + "-" + k1 + "\n" + postures[v2] + "-" + k2 + "\n" + postures[v3] + "-" + k3 + "\n";
+						
+					  try {
+							// Code to run
+							//  updater(ans,score);
+							
+							var data = [{className:'posture', probability:parseFloat(k1)*1.0}];
+							// console.log(data);
+							window.flutter_inappwebview.callHandler('updater', data);
+							//  [break;]
+						}
+
+						catch (e) {
+							// Code to run if an exception occurs
+							//  [break;]
+						}
+
+				  });
+
+				  fill_inputs_done = false;
+				  next();
+				  
+				}else{ // wait
+				  await delay(25);
+				  start();
+				}
+			}
+
+			async function check(){
+			  if(paused){
+				await delay(1000);
+				console.log("waiting");
+				check();
+			  }else if(broke){
+				exit();
+			  }else{
+				start();
+			  }
+			}
+
+			check();
+			
+			});
+
+		  }
+
+		}
+
+
+		async function classifyPose() {  
+		  if(pose){
+
+			for (let i = 0; i < pose.keypoints.length; i++) {
+			  let x = pose.keypoints[i].position.x;
+			  let y = pose.keypoints[i].position.y;
+			  cur.push(x);
+			  cur.push(y);
+			}
+
+			classifyPose_done = true;
+		  
+		  } else {
+			console.log('no pose detected, waiting');
+			await delay(100);
+			classifyPose();
+		  }
+
+		}
+
+
+		function modelLoaded() {
+		  console.log('poseNet ready');
+		}
+
+
+		function draw() {
+		  push();
+		  translate(video.width, 0);
+		  scale(-1, 1);
+		  image(video, 0, 0, video.width, video.height);
+		 
+		  if(poses.length > 0){
+			drawKeypoints();
+			drawSkeleton();
+		  }
+		  pop();
+		  drawResult();
+		}
+
+
+		function drawKeypoints()  {
+			for (let j = 0; j < pose.keypoints.length; j++) {
+			  let keypoint = pose.keypoints[j];
+			  if (keypoint.score > 0.2) {
+				fill(255, 0, 0);
+				noStroke();
+				ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
+			  }
+			}
+		}
+
+		function drawSkeleton() {
+			for (let j = 0; j < skeleton.length; j++) {
+			  let partA = skeleton[j][0];
+			  let partB = skeleton[j][1];
+			  stroke(255, 0, 0);
+			  line(partA.position.x, partA.position.y, partB.position.x, partB.position.y);
+			}
+		}
+
+		function drawResult(){
+		  fill(255, 0, 255);
+		  noStroke();
+		  textSize(25);
+		  textAlign(CENTER);
+		  text(res, video.width / 2, 50);
+		//   window.flutter_inappwebview.callHandler('updater', res);
+		}
+
+	</script>
+
+     
 </body>
+
 </html>
+
