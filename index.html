@@ -74,6 +74,8 @@
 		let broke = false;
 		let res = "";
 		var center=0;
+		let switchFlag = false;
+		let switchBtn;
 
 		function getMax(ar){
 			let max = [{value:ar[0],index:0}, 
@@ -161,6 +163,58 @@
 		  fill_inputs_done = true;
 		}
 		
+
+		function stopCapture() {
+			let stream = video.elt.srcObject;
+			let tracks = stream.getTracks();
+
+			tracks.forEach(function(track) {
+				track.stop();
+			});
+
+			video.elt.srcObject = null;
+		}
+
+		function switchCamera()
+		{
+			switchFlag = !switchFlag;
+			stopCapture();
+			if(switchFlag==true)
+			{
+			video.remove();
+			options = {
+				video: {
+					facingMode: {
+					exact: "environment"
+					}
+				}
+			};
+
+			}
+			else
+			{
+			video.remove();
+			options = {
+				video: {
+					facingMode: {
+					exact: "user"
+					}
+				}
+			};
+			}
+			video = createCapture(options);
+			video.hide();
+		}
+
+		var options = {
+			video: {
+				
+				facingMode: {
+				exact: "user"
+				}
+			}
+		};
+		
 		async function setup() {
 			
 		  var cnv = createCanvas(640, 480);
@@ -168,8 +222,12 @@
 		  center = (displayWidth-width) / 2;
 		  cnv.position(center+75, 2);
 			
-		  video = createCapture(VIDEO);
+		  video = createCapture(options);
 		  video.hide();
+
+		  switchBtn = createButton('Switch Camera');
+	      switchBtn.position(19, 19);
+		  switchBtn.mousePressed(switchCamera);
 		  
 		  // Load posenet model from ml5js framework
 		  poseNet = ml5.poseNet(video, modelLoaded);
