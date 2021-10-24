@@ -181,7 +181,7 @@
 		  cnv.position(center+75, 2);
 			
 		  capture = createCapture(options);
-		//   video.hide();
+		  capture.hide();
 
 		  switchBtn = createButton('Switch Camera');
 	      switchBtn.position(19, 19);
@@ -297,7 +297,7 @@
 			};
 			}
 			capture = createCapture(options);
-			// video.hide();
+			capture.hide();
 		}
 
 		function stopCapture() {
@@ -339,9 +339,9 @@
 
 		function draw() {
 		  push();
-		  translate(video.width, 0);
+		  translate(capture.width, 0);
 		  scale(-1, 1);
-		  image(video, 0, 0, video.width, video.height);
+		  image(capture, 0, 0, capture.width, capture.height);
 		 
 		  if(poses.length > 0){
 			drawKeypoints();
@@ -377,7 +377,7 @@
 		  noStroke();
 		  textSize(25);
 		  textAlign(CENTER);
-		  text(res, video.width / 2, 50);
+		  text(res, capture.width / 2, 50);
 		//   window.flutter_inappwebview.callHandler('updater', res);
 		}
 
