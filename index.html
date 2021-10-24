@@ -60,7 +60,7 @@
 
 <!-- <script type="text/javascript"> -->
 	<script>	
-		let capture;
+		let video;
 		let poseNet;
 		let pose;
 		let skeleton;
@@ -164,6 +164,48 @@
 		}
 		
 
+		function stopCapture() {
+			let stream = video.elt.srcObject;
+			let tracks = stream.getTracks();
+
+			tracks.forEach(function(track) {
+				track.stop();
+			});
+
+			video.elt.srcObject = null;
+		}
+
+		function switchCamera()
+		{
+			switchFlag = !switchFlag;
+			stopCapture();
+			if(switchFlag==true)
+			{
+			video.remove();
+			options = {
+				video: {
+					facingMode: {
+					exact: "environment"
+					}
+				}
+			};
+
+			}
+			else
+			{
+			video.remove();
+			options = {
+				video: {
+					facingMode: {
+					exact: "user"
+					}
+				}
+			};
+			}
+			video = createCapture(options);
+			video.hide();
+		}
+
 		var options = {
 			video: {
 				
@@ -180,15 +222,15 @@
 		  center = (displayWidth-width) / 2;
 		  cnv.position(center+75, 2);
 			
-		  capture = createCapture(options);
-		  capture.hide();
+		  video = createCapture(options);
+		  video.hide();
 
 		  switchBtn = createButton('Switch Camera');
 	      switchBtn.position(19, 19);
 		  switchBtn.mousePressed(switchCamera);
 		  
 		  // Load posenet model from ml5js framework
-		  poseNet = ml5.poseNet(capture, modelLoaded);
+		  poseNet = ml5.poseNet(video, modelLoaded);
 		  poseNet.on('pose', function(results) {
 			poses = results;
 			if (poses.length > 0) {
@@ -269,48 +311,6 @@
 		}
 
 
-		function switchCamera()
-		{
-			switchFlag = !switchFlag;
-			stopCapture();
-			if(switchFlag==true)
-			{
-			capture.remove();
-			options = {
-				video: {
-					facingMode: {
-					exact: "environment"
-					}
-				}
-			};
-
-			}
-			else
-			{
-			capture.remove();
-			options = {
-				video: {
-					facingMode: {
-					exact: "user"
-					}
-				}
-			};
-			}
-			capture = createCapture(options);
-			capture.hide();
-		}
-
-		function stopCapture() {
-			let stream = capture.elt.srcObject;
-			let tracks = stream.getTracks();
-
-			tracks.forEach(function(track) {
-				track.stop();
-			});
-
-			capture.elt.srcObject = null;
-		}
-
 		async function classifyPose() {  
 		  if(pose){
 
@@ -337,19 +337,19 @@
 		}
 
 
-		// function draw() {
-		//   push();
-		//   translate(capture.width, 0);
-		//   scale(-1, 1);
-		//   image(capture, 0, 0, capture.width, capture.height);
+		function draw() {
+		  push();
+		  translate(video.width, 0);
+		  scale(-1, 1);
+		  image(video, 0, 0, video.width, video.height);
 		 
-		//   if(poses.length > 0){
-		// 	drawKeypoints();
-		// 	drawSkeleton();
-		//   }
-		//   pop();
-		//   drawResult();
-		// }
+		  if(poses.length > 0){
+			drawKeypoints();
+			drawSkeleton();
+		  }
+		  pop();
+		  drawResult();
+		}
 
 
 		function drawKeypoints()  {
@@ -377,7 +377,7 @@
 		  noStroke();
 		  textSize(25);
 		  textAlign(CENTER);
-		  text(res, capture.width / 2, 50);
+		  text(res, video.width / 2, 50);
 		//   window.flutter_inappwebview.callHandler('updater', res);
 		}
 
